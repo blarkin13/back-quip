@@ -1,4 +1,4 @@
-# Back Quip v1.5.1
+# Back Quip v1.6.0
 
 Back Quip is a compact, monochrome, local AI social reply studio, powered by llama.cpp (no separate Ollama installation). It offers 18 original fictional personas, adjustable comedy/profanity controls, three model sizes, conversation context, URL article/post reading, optional comment targets, multiple replies, and browser-local history. It does not post comments automatically.
 
@@ -47,6 +47,16 @@ Some sites (including Reddit, X, Instagram, and paywalled publications) may bloc
 
 URL fetching requires internet access. The webpage text is downloaded by the local server; it is then processed locally by your selected model. The app blocks non-public/local addresses and limits download size and redirects.
 
-## Article-reader improvements (v1.5.1)
+## Article-reader improvements (introduced in v1.5.1)
 
 Reads publisher-supplied JSON-LD `articleBody` and article-tag paragraphs as well as ordinary text. If only a title or summary can be retrieved, the page shows a warning and the response prompt explicitly limits itself to that information. Some MSN pages still block access entirely, in which case use the original publisher link or paste the text. An article URL is never assumed to contain accessible full text.
+
+## Lifecycle and startup update checks (v1.6.0)
+
+- **Restart** starts a fresh Back Quip backend and opens the application again.
+- **Shutdown** is a two-click confirmation and stops the local server.
+- Selecting a persona hides manual style/length/platform controls. The persona's saved defaults remain active. Select **Custom** to show those controls again.
+- On each fresh startup, Windows/macOS/Linux launchers check **published GitHub Releases** before starting the local web server. If a newer release with an asset named `Back-Quip-vX.Y.Z.zip` is available, the launcher asks permission to download/install it. Press Enter to keep the current version. Offline launches are allowed.
+- A commit to `main` alone does **not** trigger an install; publish a numbered Release and attach the ZIP asset. This avoids silently replacing local code from arbitrary commits.
+- Browser button **Check updates** remains available. Updates replace allowlisted app source files but preserve `models/`, `.venv/`, local history, and `.git/`.
+- For unattended environments set `BACKQUIP_SKIP_STARTUP_UPDATE=1` to skip the launch-time network request.

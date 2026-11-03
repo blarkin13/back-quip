@@ -11,11 +11,12 @@ import urllib.request
 import webbrowser
 
 import uvicorn
+from updater import check_release, stage_release, apply_release, UpdateError
 
 HOST = "127.0.0.1"
 FIRST_PORT = 8001
 LAST_PORT = 8100
-CURRENT_VERSION = "1.5.1"
+CURRENT_VERSION = "1.6.0"
 
 
 def is_back_quip(port: int) -> bool:
@@ -84,12 +85,54 @@ def open_when_ready(port: int) -> None:
         time.sleep(0.25)
 
 
+def check_updates_before_launch() -> bool:
+    """Return True when a release is staged and relaunch is delegated to the updater."""
+    if __import__('os').getenv('BACKQUIP_SKIP_STARTUP_UPDATE')=='1':
+        return False
+    print('[Back Quip] Checking GitHub Releases for an update…', flush=True)
+    try:
+        release=check_release(CURRENT_VERSION)
+    except (UpdateError,OSError,ValueError) as exc:
+        print(f'[Back Quip] Update check unavailable: {exc}. Starting installed version.',flush=True)
+        return False
+    if not release.get('available'):
+        if release.get('reason'): print(f"[Back Quip] {release['reason']}",flush=True)
+        return False
+    print(f"[Back Quip] Version {release['latest']} is available.",flush=True)
+    if not sys.stdin.isatty():
+        print('[Back Quip] Non-interactive startup: skip update; use Check updates inside the app.',flush=True)
+        return False
+    answer=input('Download and install this GitHub Release before starting? [y/N]: ').strip().lower()
+    if answer not in ('y','yes'):
+        print('[Back Quip] Continuing with the installed version.',flush=True)
+        return False
+    try:
+        archive=stage_release(release)
+        apply_release(archive,0)
+    except (UpdateError,OSError,ValueError) as exc:
+        print(f'[Back Quip] Update failed: {exc}. Starting installed version.',flush=True)
+        return False
+    print('[Back Quip] Update installed. Relaunching the updated application.',flush=True)
+    return True
+
+
 def main() -> int:
     prior = existing_instance()
     if prior is not None:
+        # Don't overwrite files beneath a running server. Still check for a
+        # newer release before opening the existing page.
+        if __import__('os').getenv('BACKQUIP_SKIP_STARTUP_UPDATE')!='1':
+            try:
+                release=check_release(CURRENT_VERSION)
+                if release.get('available'):
+                    print(f"[Back Quip] Release {release['latest']} available; use Check updates in the running app.",flush=True)
+            except (UpdateError,OSError,ValueError):
+                pass
         url = f"http://{HOST}:{prior}"
         print(f"[Back Quip] Already running at {url}", flush=True)
         webbrowser.open(url)
+        return 0
+    if check_updates_before_launch():
         return 0
     try:
         server_socket, port = reserve_port()

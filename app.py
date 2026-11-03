@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -19,7 +19,7 @@ from updater import check_release, stage_release, UpdateError
 from source_fetch import fetch_source, SourceError
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '1.5.1'
+VERSION = '1.6.0'
 MODELS_DIR = Path(os.getenv('BACKQUIP_MODELS_DIR', ROOT / 'models'))
 DEFAULT_MODEL = os.getenv('BACKQUIP_MODEL', 'sharp')
 CONTEXT_TOKENS = int(os.getenv('BACKQUIP_CONTEXT', '8192'))
@@ -233,6 +233,31 @@ async def updates_install():
                      creationflags=getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0))
     threading.Thread(target=lambda:(time.sleep(.8),os._exit(0)),daemon=True).start()
     return {'status':'restarting','message':'Update downloaded and installation starting'}
+
+def _local_action_guard(action_token: str | None) -> None:
+    # A non-simple request header prevents cross-origin HTML forms from triggering
+    # lifecycle operations. The app is only bound to loopback by the launcher.
+    if action_token != 'back-quip-local':
+        raise HTTPException(403, 'Local application confirmation required')
+
+@app.post('/api/system/shutdown')
+async def shutdown_app(x_backquip_action: str | None = Header(default=None)):
+    _local_action_guard(x_backquip_action)
+    threading.Thread(target=lambda:(time.sleep(0.35), os._exit(0)),daemon=True).start()
+    return {'state':'shutting_down'}
+
+@app.post('/api/system/restart')
+async def restart_app(x_backquip_action: str | None = Header(default=None)):
+    _local_action_guard(x_backquip_action)
+    # The helper waits for this process to exit before spawning the launcher,
+    # avoiding a false detection of an already-running instance.
+    command=[sys.executable,str(ROOT/'updater.py'),'restart',str(os.getpid())]
+    kwargs={'cwd':str(ROOT),'stdin':subprocess.DEVNULL,'stdout':subprocess.DEVNULL,
+            'stderr':subprocess.DEVNULL,'creationflags':getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)}
+    if sys.platform != 'win32': kwargs['start_new_session']=True
+    subprocess.Popen(command,**kwargs)
+    threading.Thread(target=lambda:(time.sleep(0.35), os._exit(0)),daemon=True).start()
+    return {'state':'restarting'}
 
 @app.post('/api/source/preview')
 async def preview_source(request: dict):

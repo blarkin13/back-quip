@@ -97,11 +97,12 @@ def stage_release(release: dict) -> Path:
 def apply_release(path:Path,pid:int) -> None:
     validate_archive(path)
     # Give old server time to exit before replacing Python files.
-    for _ in range(50):
-        if not _running(pid):break
-        time.sleep(.2)
-    else:
-        raise UpdateError('Old server did not exit; update not installed')
+    if pid > 0:
+        for _ in range(50):
+            if not _running(pid):break
+            time.sleep(.2)
+        else:
+            raise UpdateError('Old server did not exit; update not installed')
     backup=ROOT/'.backquip-update-backup'
     backup.mkdir(exist_ok=True)
     replacement=ROOT/'.backquip-update-extract'
@@ -146,14 +147,32 @@ def apply_release(path:Path,pid:int) -> None:
                      creationflags=getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0),
                      start_new_session=sys.platform!='win32')
 
+def restart_after_exit(pid: int) -> None:
+    if pid <= 0: raise UpdateError('Invalid restart PID')
+    for _ in range(100):
+        if not _running(pid): break
+        time.sleep(.15)
+    else:
+        raise UpdateError('Previous server did not exit')
+    command=['cmd','/c',str(ROOT/'start.bat')] if sys.platform=='win32' else ['bash',str(ROOT/'start.sh')]
+    with (ROOT/'.backquip-restart.log').open('a') as log:
+        subprocess.Popen(command,cwd=str(ROOT),stdin=subprocess.DEVNULL,
+                         stdout=log,stderr=subprocess.STDOUT,
+                         creationflags=getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0),
+                         start_new_session=sys.platform!='win32')
+
 def _running(pid):
     try:os.kill(pid,0);return True
     except OSError:return False
 
 if __name__=='__main__':
-    if len(sys.argv)==4 and sys.argv[1]=='apply':
-        try:apply_release(Path(sys.argv[2]),int(sys.argv[3]))
-        except Exception as exc:
-            (ROOT/'.backquip-update.log').open('a').write(f'Update failed: {exc}\n')
-            sys.exit(1)
-    else:sys.exit('Usage: updater.py apply ARCHIVE PID')
+    try:
+        if len(sys.argv)==4 and sys.argv[1]=='apply':
+            apply_release(Path(sys.argv[2]),int(sys.argv[3]))
+        elif len(sys.argv)==3 and sys.argv[1]=='restart':
+            restart_after_exit(int(sys.argv[2]))
+        else:
+            sys.exit('Usage: updater.py apply ARCHIVE PID | restart PID')
+    except Exception as exc:
+        (ROOT/'.backquip-update.log').open('a').write(f'Update/restart failed: {exc}\n')
+        sys.exit(1)
