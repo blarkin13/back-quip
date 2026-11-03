@@ -15,7 +15,7 @@ import uvicorn
 HOST = "127.0.0.1"
 FIRST_PORT = 8001
 LAST_PORT = 8100
-CURRENT_VERSION = "1.2.0"
+CURRENT_VERSION = "1.1.2"
 
 
 def is_back_quip(port: int) -> bool:
