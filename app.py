@@ -15,11 +15,11 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from llama_cpp import Llama
-from updater import check_release, stage_release, UpdateError
+from updater import check_update, stage_update, get_channel, set_channel, UpdateError
 from source_fetch import fetch_source, SourceError
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '1.6.0'
+VERSION = '1.7.0'
 MODELS_DIR = Path(os.getenv('BACKQUIP_MODELS_DIR', ROOT / 'models'))
 DEFAULT_MODEL = os.getenv('BACKQUIP_MODEL', 'sharp')
 CONTEXT_TOKENS = int(os.getenv('BACKQUIP_CONTEXT', '8192'))
@@ -211,28 +211,46 @@ async def download_model(name:str):
     asyncio.create_task(pull_model(name))
     return {'state':'queued','message':f'{name} download started'}
 
+class UpdateChannelRequest(BaseModel):
+    channel: str
+
+@app.get('/api/updates/channel')
+def update_channel():
+    return {'channel': get_channel()}
+
+@app.post('/api/updates/channel')
+def update_channel_set(req: UpdateChannelRequest, x_backquip_action: str | None = Header(default=None)):
+    _local_action_guard(x_backquip_action)
+    try:
+        return {'channel': set_channel(req.channel)}
+    except (UpdateError, OSError) as exc:
+        raise HTTPException(400, str(exc))
+
 @app.get('/api/updates/check')
 async def updates_check():
     try:
-        return await asyncio.to_thread(check_release,VERSION)
+        return await asyncio.to_thread(check_update, VERSION)
     except UpdateError as exc:
-        raise HTTPException(503,str(exc))
+        raise HTTPException(503, str(exc))
 
 @app.post('/api/updates/install')
-async def updates_install():
+async def updates_install(x_backquip_action: str | None = Header(default=None)):
+    _local_action_guard(x_backquip_action)
     try:
-        release=await asyncio.to_thread(check_release,VERSION)
-        if not release['available']:
-            raise HTTPException(409,'Already using the latest release')
-        archive=await asyncio.to_thread(stage_release,release)
+        update = await asyncio.to_thread(check_update, VERSION)
+        if not update['available']:
+            raise HTTPException(409, 'Already up to date')
+        archive = await asyncio.to_thread(stage_update, update)
     except UpdateError as exc:
-        raise HTTPException(503,str(exc))
-    # Helper safely backs up and replaces app files only after this server shuts down.
-    cmd=[sys.executable,str(ROOT/'updater.py'),'apply',str(archive),str(os.getpid())]
-    subprocess.Popen(cmd,cwd=str(ROOT),stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
-                     creationflags=getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0))
+        raise HTTPException(503, str(exc))
+    command = [sys.executable, str(ROOT/'updater.py'), 'apply', str(archive), str(os.getpid()), update['channel']]
+    kwargs = {'cwd': str(ROOT), 'stdin': subprocess.DEVNULL,
+              'stdout': (ROOT/'.backquip-update.log').open('a'), 'stderr': subprocess.STDOUT,
+              'creationflags': getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)}
+    if sys.platform != 'win32': kwargs['start_new_session'] = True
+    subprocess.Popen(command, **kwargs)
     threading.Thread(target=lambda:(time.sleep(.8),os._exit(0)),daemon=True).start()
-    return {'status':'restarting','message':'Update downloaded and installation starting'}
+    return {'status':'restarting', 'message':'Update downloaded; restarting Back Quip'}
 
 def _local_action_guard(action_token: str | None) -> None:
     # A non-simple request header prevents cross-origin HTML forms from triggering

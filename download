@@ -7,3 +7,6 @@ __pycache__/
 .backquip-update*
 .env
 .DS_Store
+.backquip-settings.json
+.backquip-settings.tmp
+.backquip-restart.log

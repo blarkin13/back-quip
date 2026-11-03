@@ -1,4 +1,4 @@
-# Back Quip v1.6.0
+# Back Quip v1.7.0
 
 Back Quip is a compact, monochrome, local AI social reply studio, powered by llama.cpp (no separate Ollama installation). It offers 18 original fictional personas, adjustable comedy/profanity controls, three model sizes, conversation context, URL article/post reading, optional comment targets, multiple replies, and browser-local history. It does not post comments automatically.
 
@@ -25,13 +25,17 @@ The names identify approximate sizes, not guaranteed speed or quality. A model d
 
 The 12 Signature personas and six Back Quip Originals are original comic character presets, not celebrity impersonations. Choosing one sets suggested slider defaults. You can modify sliders afterward; the selected personality provides an additional writing mechanism.
 
-## GitHub release updates
+## Updates: Development and Stable
 
-The app checks the latest **published GitHub Release** from `blarkin13/back-quip`. Checking does not modify the app. When a newer release exists and has a ZIP named exactly `Back-Quip-vX.Y.Z.zip`, the **Check updates** control offers installation. Choosing installation downloads the release ZIP, validates its contents, backs up application files, replaces only allowlisted source files, and relaunches Back Quip. It preserves `.venv/`, `models/`, and browser-local history. The update uses HTTPS and requires a deliberate click.
+The default update channel is **Development**, because the project is currently maintained by uploading commits to `main` without publishing Releases. Switch channels in the top-right header. The selection is stored only on your computer in `.backquip-settings.json`.
 
-**Publishing updates:** On GitHub, create a Release tagged `v1.4.1` (or newer) and attach a ZIP asset named `Back-Quip-v1.4.1.zip` containing root-level app files. Simply pushing commits to `main` does **not** trigger this updater. Avoid deleting the Git repository to preserve history unless you specifically want a clean history.
+- **Development:** compares local managed app files to GitHub `main` using Git blob hashes. Detects a change even if the application version number stays the same. Shows which files differ; downloads a ZIP archive pinned to that commit SHA, validates paths and file hashes, and asks before installing. No GitHub Release is required.
+- **Stable:** checks the latest published GitHub Release, requires a newer version and an attached `Back-Quip-vX.Y.Z.zip` asset, and asks before installing. No Releases currently exist, so Stable reports that rather than downloading from `main`.
 
-If an update fails, inspect `.backquip-update.log` and backups in `.backquip-update-backup/`.
+Both startup scripts check the selected channel before opening the page (after dependency installation). The browser's **Check updates** button uses the same selection. Updates back up only allowlisted application files, leaving `models/`, `.venv/`, `.git/`, local settings and browser history untouched. Development uses the archive for the latest commit of `main`, but only changes recognized application files, not arbitrary new scripts. Restart the app after uploading this package to GitHub to establish the new updater. If you see a repeated prompt immediately after a GitHub upload, run Check updates; the updater compares actual file contents instead of relying only on commit IDs.
+
+For startup without a check, set `BACKQUIP_SKIP_STARTUP_UPDATE=1`. Network errors do not prevent offline use. An already-running Back Quip instance remains running; use the in-app updater to safely replace it.
+
 
 ## Privacy and portability
 
@@ -51,12 +55,6 @@ URL fetching requires internet access. The webpage text is downloaded by the loc
 
 Reads publisher-supplied JSON-LD `articleBody` and article-tag paragraphs as well as ordinary text. If only a title or summary can be retrieved, the page shows a warning and the response prompt explicitly limits itself to that information. Some MSN pages still block access entirely, in which case use the original publisher link or paste the text. An article URL is never assumed to contain accessible full text.
 
-## Lifecycle and startup update checks (v1.6.0)
+## Lifecycle controls
 
-- **Restart** starts a fresh Back Quip backend and opens the application again.
-- **Shutdown** is a two-click confirmation and stops the local server.
-- Selecting a persona hides manual style/length/platform controls. The persona's saved defaults remain active. Select **Custom** to show those controls again.
-- On each fresh startup, Windows/macOS/Linux launchers check **published GitHub Releases** before starting the local web server. If a newer release with an asset named `Back-Quip-vX.Y.Z.zip` is available, the launcher asks permission to download/install it. Press Enter to keep the current version. Offline launches are allowed.
-- A commit to `main` alone does **not** trigger an install; publish a numbered Release and attach the ZIP asset. This avoids silently replacing local code from arbitrary commits.
-- Browser button **Check updates** remains available. Updates replace allowlisted app source files but preserve `models/`, `.venv/`, local history, and `.git/`.
-- For unattended environments set `BACKQUIP_SKIP_STARTUP_UPDATE=1` to skip the launch-time network request.
+Restart and Shutdown are available from the header. The updater never overwrites a live server; it installs only after the old process exits and then launches the application again.

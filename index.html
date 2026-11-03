@@ -9,9 +9,9 @@
 <style>
 :root {color-scheme:dark;--bg:#080808;--panel:#0b0b0b;--field:#080808;--line:#303030;--muted:#aaa;--text:#f0f0f0;--light:#efefef}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}button,input,textarea,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.5}
-.update-tools{display:flex;align-items:center;gap:8px}.update-tools button{font-size:12px}.shell{width:min(940px,calc(100% - 32px));margin:24px auto 64px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:15px}.brand{display:flex;align-items:center;gap:11px;font-size:24px;font-weight:800;letter-spacing:-.8px}.brand-icon{width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0}.tag{background:#242424;border:1px solid #333;border-radius:50px;padding:5px 11px;color:#ddd;font-size:12px;white-space:nowrap}.sub{color:#aaa;font-size:14px;margin-top:3px}
+.update-tools{display:flex;align-items:center;gap:8px}.channel-control{display:flex;align-items:center;gap:5px;font-size:12px;color:#aaa}.channel-control select{width:auto;min-height:34px;padding:5px 9px;border-radius:8px;font-size:12px}.update-tools button{font-size:12px}.shell{width:min(940px,calc(100% - 32px));margin:24px auto 64px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:15px}.brand{display:flex;align-items:center;gap:11px;font-size:24px;font-weight:800;letter-spacing:-.8px}.brand-icon{width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0}.tag{background:#242424;border:1px solid #333;border-radius:50px;padding:5px 11px;color:#ddd;font-size:12px;white-space:nowrap}.sub{color:#aaa;font-size:14px;margin-top:3px}
 .main{border:1px solid var(--line);border-radius:21px;background:var(--panel);padding:20px}.heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.heading h1{font-size:18px;margin:0;font-weight:650}.status{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#aaa}.dot{width:8px;height:8px;background:#777;border-radius:100%}.dot.ok{background:#eaeaea}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}.group{min-width:0}.group label,.legend{display:block;color:#dadada;font-size:14px;font-weight:550;margin-bottom:8px}textarea,.textfield,select{width:100%;border:1px solid #393939;background:var(--field);color:#f0f0f0;border-radius:9px;padding:12px 14px;outline:none}textarea{resize:vertical;min-height:76px}textarea::placeholder{color:#797979}.textfield:focus,textarea:focus,select:focus{border-color:#999}select{appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23ddd" stroke-width="2"%3E%3Cpath d="m6 9 6 6 6-6"/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 12px center;padding-right:35px}
-.model-row{display:flex;gap:8px;align-items:stretch}.model-row select{min-width:0;flex:1}.model-row button{white-space:nowrap}.toggle{border:1px solid #393939;border-radius:9px;display:flex!important;align-items:center;gap:10px;padding:12px 14px;min-height:46px;color:#ddd!important;font-weight:450!important;cursor:pointer}.toggle input{accent-color:#fff;width:17px;height:17px;flex-shrink:0}.hint{font-size:12px;color:#858585;margin-top:7px}.sliderhead{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:600}.value{font-weight:450;color:#aaa}.range{width:100%;accent-color:#fff;margin:13px 0 6px;cursor:pointer}.ends{display:flex;justify-content:space-between;font-size:12px;color:#999}.seg{display:grid;grid-template-columns:repeat(3,1fr);background:#171717;border-radius:10px;padding:4px;gap:3px}.seg button{border:0;background:transparent;color:#aaa;border-radius:8px;padding:10px 5px;font-size:13px}.seg button.active{background:#ebebeb;color:#111;font-weight:650}.controls{display:flex;justify-content:space-between;gap:10px;margin-top:16px}.primary{background:var(--light);color:#111;border:1px solid #f0f0f0;border-radius:11px;padding:13px 18px;font-weight:700;min-height:46px}.primary:hover:not(:disabled){background:#fff}.secondary{background:#131313;color:#eee;border:1px solid #3b3b3b;border-radius:9px;padding:9px 13px}.secondary:hover{border-color:#777}.generate{flex:1}.notice{margin-top:13px;color:#aaa;font-size:13px}.error{color:#fff;border:1px solid #777;border-radius:8px;padding:12px;margin-top:12px;background:#222}.results{margin-top:22px;display:none}.results.visible{display:block}.resulthead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.resulthead h2{margin:0;font-size:18px}.cards{display:grid;gap:12px}.reply{border:1px solid var(--line);border-radius:13px;padding:15px;background:#101010}.replytitle{font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px}.reply textarea{min-height:74px;background:transparent;border:0;padding:0;resize:vertical;line-height:1.55}.reply textarea:focus{border:0}.replyactions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}.tiny{font-size:12px;color:#888}.history{margin-top:14px}.history h2{font-size:15px}.historylist{display:grid;gap:7px}.historyitem{background:#111;border:1px solid #292929;border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;gap:12px}.historyitem button{background:transparent;border:0;color:#ddd;text-align:left;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.muted{color:#999;font-size:12px}.hidden{display:none!important}@media(max-width:640px){.update-tools{flex-direction:column;align-items:end}.shell{width:calc(100% - 20px);margin-top:13px}.main{padding:16px;border-radius:16px}.grid{grid-template-columns:1fr;gap:18px}.full{grid-column:auto}.brand{font-size:21px}.controls{flex-wrap:wrap}.generate{flex-basis:100%;order:-1}.top{margin-bottom:16px}.status{font-size:11px}}
+.model-row{display:flex;gap:8px;align-items:stretch}.model-row select{min-width:0;flex:1}.model-row button{white-space:nowrap}.toggle{border:1px solid #393939;border-radius:9px;display:flex!important;align-items:center;gap:10px;padding:12px 14px;min-height:46px;color:#ddd!important;font-weight:450!important;cursor:pointer}.toggle input{accent-color:#fff;width:17px;height:17px;flex-shrink:0}.hint{font-size:12px;color:#858585;margin-top:7px}.sliderhead{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:600}.value{font-weight:450;color:#aaa}.range{width:100%;accent-color:#fff;margin:13px 0 6px;cursor:pointer}.ends{display:flex;justify-content:space-between;font-size:12px;color:#999}.seg{display:grid;grid-template-columns:repeat(3,1fr);background:#171717;border-radius:10px;padding:4px;gap:3px}.seg button{border:0;background:transparent;color:#aaa;border-radius:8px;padding:10px 5px;font-size:13px}.seg button.active{background:#ebebeb;color:#111;font-weight:650}.controls{display:flex;justify-content:space-between;gap:10px;margin-top:16px}.primary{background:var(--light);color:#111;border:1px solid #f0f0f0;border-radius:11px;padding:13px 18px;font-weight:700;min-height:46px}.primary:hover:not(:disabled){background:#fff}.secondary{background:#131313;color:#eee;border:1px solid #3b3b3b;border-radius:9px;padding:9px 13px}.secondary:hover{border-color:#777}.generate{flex:1}.notice{margin-top:13px;color:#aaa;font-size:13px}.error{color:#fff;border:1px solid #777;border-radius:8px;padding:12px;margin-top:12px;background:#222}.results{margin-top:22px;display:none}.results.visible{display:block}.resulthead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.resulthead h2{margin:0;font-size:18px}.cards{display:grid;gap:12px}.reply{border:1px solid var(--line);border-radius:13px;padding:15px;background:#101010}.replytitle{font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px}.reply textarea{min-height:74px;background:transparent;border:0;padding:0;resize:vertical;line-height:1.55}.reply textarea:focus{border:0}.replyactions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}.tiny{font-size:12px;color:#888}.history{margin-top:14px}.history h2{font-size:15px}.historylist{display:grid;gap:7px}.historyitem{background:#111;border:1px solid #292929;border-radius:10px;padding:11px;display:flex;justify-content:space-between;align-items:center;gap:12px}.historyitem button{background:transparent;border:0;color:#ddd;text-align:left;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.muted{color:#999;font-size:12px}.hidden{display:none!important}.persona-hidden{display:none!important}@media(max-width:640px){.update-tools{flex-wrap:wrap;justify-content:flex-end;gap:5px}.update-tools button{padding:7px 9px;font-size:11px}.shell{width:calc(100% - 20px);margin-top:13px}.main{padding:16px;border-radius:16px}.grid{grid-template-columns:1fr;gap:18px}.full{grid-column:auto}.brand{font-size:21px}.controls{flex-wrap:wrap}.generate{flex-basis:100%;order:-1}.top{margin-bottom:16px}.status{font-size:11px}}
 
 /* Compact disclosure sections: advanced controls and saved generations */
 .disclosure{grid-column:1/-1;border:1px solid #303030;border-radius:10px;padding:0;background:#0d0d0d}
@@ -33,7 +33,7 @@
 </head>
 <body>
 <div class="shell">
-  <header class="top"><div><div class="brand"><img class="brand-icon" src="/assets/back-quip-logo.png" alt="Back Quip logo" /> Back Quip</div><div class="sub">Your words. Your tone. Your response.</div></div><div class="update-tools"><button class="secondary" type="button" id="checkUpdates">Check updates</button><span class="tag">Local AI Studio · v1.5.1</span></div></header>
+  <header class="top"><div><div class="brand"><img class="brand-icon" src="/assets/back-quip-logo.png" alt="Back Quip logo" /> Back Quip</div><div class="sub">Your words. Your tone. Your response.</div></div><div class="update-tools"><label class="channel-control" for="updateChannel">Updates <select id="updateChannel" title="Choose update source"><option value="development">Development</option><option value="stable">Stable</option></select></label><button class="secondary" type="button" id="checkUpdates">Check updates</button><button class="secondary" type="button" id="restartApp" title="Restart Back Quip">Restart</button><button class="secondary" type="button" id="shutdownApp" title="Stop the local Back Quip server">Shutdown</button><span class="tag">Local AI Studio · v1.7.0</span></div></header>
   <main class="main">
     <div class="heading"><h1>▢ &nbsp;Response Studio</h1><span class="status"><span id="dot" class="dot"></span><span id="status">Checking local AI...</span></span></div>
     <div class="grid">
@@ -42,18 +42,18 @@
       <div class="group full"><label for="points">What points should your response make?</label><textarea id="points" placeholder="Correct their facts, point out the contradiction, make a joke about their argument..."></textarea></div>
       <div class="group full"><details id="contextDetails"><summary style="color:#aaa;cursor:pointer;font-size:13px">+ Add conversation context (optional)</summary><textarea id="context" style="margin-top:10px" placeholder="Paste the original post or earlier replies so Back Quip understands the conversation..."></textarea></details></div>
       <div class="group full"><label for="persona">Persona</label><select id="persona"><option value="">Custom · use my settings</option></select><div class="hint" id="personaHint">Choose a personality. Sliders remain editable after selecting.</div></div>
-      <div class="group"><div class="sliderhead"><label for="profanity">Profanity</label><span class="value" id="profanityValue">0%</span></div><input class="range" id="profanity" type="range" min="0" max="100" value="0" step="5"><div class="ends"><span>Clean</span><span>Unfiltered</span></div></div>
-      <div class="group"><label for="adultLanguage">Adult humor</label><label class="toggle"><input type="checkbox" id="adultLanguage" checked><span>Allow mature / dark humor</span></label><div class="hint">Profanity is controlled separately by its slider; no extra switch required.</div></div>
-      <details class="disclosure" id="advancedDetails"><summary>Show more · Advanced tone controls</summary><div class="disclosure-body"><div class="advanced-grid">
+      <div class="group persona-optional"><div class="sliderhead"><label for="profanity">Profanity</label><span class="value" id="profanityValue">0%</span></div><input class="range" id="profanity" type="range" min="0" max="100" value="0" step="5"><div class="ends"><span>Clean</span><span>Unfiltered</span></div></div>
+      <div class="group persona-optional"><label for="adultLanguage">Adult humor</label><label class="toggle"><input type="checkbox" id="adultLanguage" checked><span>Allow mature / dark humor</span></label><div class="hint">Profanity is controlled separately by its slider; no extra switch required.</div></div>
+      <details class="disclosure persona-optional" id="advancedDetails"><summary>Show more · Advanced tone controls</summary><div class="disclosure-body"><div class="advanced-grid">
       <div class="group"><div class="sliderhead"><label for="intensity">Intensity</label><span class="value" id="intensityValue">65%</span></div><input class="range" id="intensity" type="range" min="0" max="100" value="65" step="5"><div class="ends"><span>Gentle</span><span>Sharp</span></div></div>
       <div class="group"><div class="sliderhead"><label for="humor">Humor</label><span class="value" id="humorValue">75%</span></div><input class="range" id="humor" type="range" min="0" max="100" value="75" step="5"><div class="ends"><span>Serious</span><span>Absurd</span></div></div>
       <div class="group"><div class="sliderhead"><label for="sarcasm">Sarcasm</label><span class="value" id="sarcasmValue">50%</span></div><input class="range" id="sarcasm" type="range" min="0" max="100" value="50" step="5"><div class="ends"><span>None</span><span>Brutal</span></div></div>
       <div class="group"><div class="sliderhead"><label for="aggression">Aggression</label><span class="value" id="aggressionValue">45%</span></div><input class="range" id="aggression" type="range" min="0" max="100" value="45" step="5"><div class="ends"><span>Friendly</span><span>Savage</span></div></div>
       </div></div></details>
-      <div class="group"><label for="tone">Tone / personality</label><select id="tone"><option>Sarcastic</option><option>Professional</option><option>Funny</option><option>Savage</option><option>Classy</option><option>Diplomatic</option><option>Intellectual</option><option>Empathetic</option><option>Dismissive</option><option>Friendly</option></select></div>
-      <div class="group"><label for="comedyStyle">Comedy style</label><select id="comedyStyle"><option>Surprise me</option><option>Dry / deadpan</option><option>Absurd imagery</option><option>Clever wordplay</option><option>Observational</option><option>Roast the argument</option><option>Dark humor</option><option>Ridiculous analogy</option></select><div class="hint">Pick a joke mechanism, not just a tone.</div></div>
-      <div class="group"><label for="platform">Platform</label><select id="platform"><option>Reddit</option><option>X / Twitter</option><option>Instagram</option><option>Facebook</option><option>YouTube</option><option>Other</option></select></div>
-      <div class="group"><label>Response length</label><div class="seg" id="lengths"><button type="button" data-length="One-liner">One-liner</button><button type="button" data-length="Short" class="active">Short</button><button type="button" data-length="Detailed">Detailed</button></div></div>
+      <div class="group persona-optional"><label for="tone">Tone / personality</label><select id="tone"><option>Sarcastic</option><option>Professional</option><option>Funny</option><option>Savage</option><option>Classy</option><option>Diplomatic</option><option>Intellectual</option><option>Empathetic</option><option>Dismissive</option><option>Friendly</option></select></div>
+      <div class="group persona-optional"><label for="comedyStyle">Comedy style</label><select id="comedyStyle"><option>Surprise me</option><option>Dry / deadpan</option><option>Absurd imagery</option><option>Clever wordplay</option><option>Observational</option><option>Roast the argument</option><option>Dark humor</option><option>Ridiculous analogy</option></select><div class="hint">Pick a joke mechanism, not just a tone.</div></div>
+      <div class="group persona-optional"><label for="platform">Platform</label><select id="platform"><option>Reddit</option><option>X / Twitter</option><option>Instagram</option><option>Facebook</option><option>YouTube</option><option>Other</option></select></div>
+      <div class="group persona-optional"><label>Response length</label><div class="seg" id="lengths"><button type="button" data-length="One-liner">One-liner</button><button type="button" data-length="Short" class="active">Short</button><button type="button" data-length="Detailed">Detailed</button></div></div>
       <div class="group"><label for="model">Response engine</label><div class="model-row"><select id="model"><option value="">Checking available modes…</option></select><button type="button" class="secondary hidden" id="downloadModel" disabled>↓ Download</button><button type="button" class="secondary" id="refreshModels" title="Check available response engines">↻ Refresh</button></div><div class="hint" id="modelHint">Choose a mode, or download one if missing.</div></div>
     </div>
     <div class="controls"><button id="generate" class="primary generate">✧ &nbsp;Generate 3 responses</button><button class="secondary" id="reset" type="button">Reset settings</button></div>
@@ -77,14 +77,14 @@ function saveHistory() { try { localStorage.setItem('backquip-history', JSON.str
 function syncSlider(id) { $(id+'Value').textContent = $(id).value + '%'; }
 for (const id of Object.keys(sliderDefaults)) $(id).addEventListener('input',()=>syncSlider(id));
 const personaCatalog=new Map();
-function syncPersona(){const p=personaCatalog.get($('persona').value);$('personaHint').textContent=p?p.description+' · You can adjust any setting.':'Choose a personality. Sliders remain editable after selecting.';}
+function syncPersona(){const p=personaCatalog.get($('persona').value);const selected=Boolean(p);$('personaHint').textContent=selected?'':'Choose a personality, or use the individual controls below.';$('personaHint').classList.toggle('hidden',selected);document.querySelectorAll('.persona-optional').forEach(el=>el.classList.toggle('persona-hidden',selected));if(selected)$('advancedDetails').open=false;}
 function applyPersona(p){for(const id of Object.keys(sliderDefaults)){if(Number.isFinite(p[id])){$(id).value=String(p[id]);syncSlider(id);}}if(p.tone)$('tone').value=p.tone;if(p.comedy_style)$('comedyStyle').value=p.comedy_style;if(p.length)setLength(p.length);}
 $('persona').addEventListener('change',()=>{const p=personaCatalog.get($('persona').value);if(p)applyPersona(p);syncPersona();});
 async function loadPersonas(){try{const r=await fetch('/api/personas');if(!r.ok)throw Error('Persona catalog unavailable');const d=await r.json();const s=$('persona');s.replaceChildren(new Option('Custom · use my settings',''));const groups=new Map();for(const p of d.personas){personaCatalog.set(p.name,p);if(!groups.has(p.group)){const g=document.createElement('optgroup');g.label=p.group;s.append(g);groups.set(p.group,g);}groups.get(p.group).append(new Option(p.name,p.name));}syncPersona();}catch(e){error(e.message);}}
 function setLength(l) { length = l; document.querySelectorAll('[data-length]').forEach(b=>b.classList.toggle('active',b.dataset.length===l)); }
 document.querySelectorAll('[data-length]').forEach(b=>b.addEventListener('click',()=>setLength(b.dataset.length)));
 function getPayload() { const o={}; for(const id of fields) o[id]=$(id).value; for(const id of Object.keys(sliderDefaults))o[id]=Number(o[id]);o.adult_language=$('adultLanguage').checked;o.comedy_style=$('comedyStyle').value;o.length=length;return o; }
-function applyPayload(p) { for(const id of fields) if (p[id]!==undefined && id!=='model') $(id).value=p[id];if(p.model){ const m=$('model');if([...m.options].some(o=>o.value===p.model))m.value=p.model; }$('adultLanguage').checked=p.adult_language!==false;$('comedyStyle').value=p.comedy_style||'Surprise me';setLength(p.length||'Short');for(const id of Object.keys(sliderDefaults))syncSlider(id);$('sourcePreview').textContent='Click Load post to preview the source.'; }
+function applyPayload(p) { for(const id of fields) if (p[id]!==undefined && id!=='model') $(id).value=p[id];if(p.model){ const m=$('model');if([...m.options].some(o=>o.value===p.model))m.value=p.model; }$('adultLanguage').checked=p.adult_language!==false;$('comedyStyle').value=p.comedy_style||'Surprise me';setLength(p.length||'Short');for(const id of Object.keys(sliderDefaults))syncSlider(id);$('sourcePreview').textContent='Click Load post to preview the source.'; syncPersona(); }
 function toast(message,kind='info',duration=4500){
   const stack=$('toasts'),el=document.createElement('div');
   el.className='toast';el.dataset.kind=kind;el.setAttribute('role',kind==='error'?'alert':'status');
@@ -213,10 +213,81 @@ $('clearHistory').addEventListener('click',()=>{
   clearTimeout(clearHistoryTimer);clearHistoryArmed=false;btn.textContent='Clear history';
   histories=[];saveHistory();renderHistory();toast('Response history cleared','success');
 });
-async function checkUpdates(silent=false){const btn=$('checkUpdates');btn.disabled=true;try{const r=await fetch('/api/updates/check',{cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.detail||'Could not check for updates');if(d.available){btn.textContent='Install '+d.latest;btn.disabled=false;btn.onclick=installUpdate;toast('New Back Quip '+d.latest+' is available','info',6000);}else{btn.textContent='Up to date';if(!silent)toast(d.reason||'Back Quip is up to date','success');setTimeout(()=>{btn.textContent='Check updates';btn.disabled=false;},4500);}}catch(e){if(!silent)toast(e.message,'warning');btn.disabled=false;}}
-async function installUpdate(){const btn=$('checkUpdates');btn.disabled=true;btn.textContent='Installing…';toast('Downloading verified GitHub release. Back Quip will restart after installation.','info',7000);try{const r=await fetch('/api/updates/install',{method:'POST'});const d=await r.json();if(!r.ok)throw Error(d.detail||'Update failed');toast('Update installing; reopen Back Quip after restart.','success',9000);}catch(e){toast(e.message,'error');btn.disabled=false;btn.textContent='Check updates';}}
-$('checkUpdates').onclick=()=>checkUpdates(false);
-renderHistory(); loadPersonas(); status(); checkUpdates(true);
+let updateReady = false;
+function updateButtonReset(){const btn=$('checkUpdates');btn.textContent='Check updates';btn.disabled=false;updateReady=false;}
+async function loadUpdateChannel(){
+  try {const r=await fetch('/api/updates/channel',{cache:'no-store'});if(!r.ok)throw Error('Could not read update channel');const d=await r.json();$('updateChannel').value=d.channel;}
+  catch(e){toast(e.message,'warning');}
+}
+$('updateChannel').addEventListener('change',async()=>{
+  const sel=$('updateChannel'),wanted=sel.value,previous=wanted==='stable'?'development':'stable';
+  sel.disabled=true;
+  try {
+    const r=await fetch('/api/updates/channel',{method:'POST',headers:{'Content-Type':'application/json','X-BackQuip-Action':'back-quip-local'},body:JSON.stringify({channel:wanted})});
+    const d=await r.json();if(!r.ok)throw Error(d.detail||'Could not save update channel');
+    updateButtonReset();toast('Update channel: '+(wanted==='development'?'Development · GitHub main':'Stable · GitHub Releases'),'success',3200);
+    await checkUpdates(true);
+  }catch(e){sel.value=previous;toast(e.message,'error');}
+  finally{sel.disabled=false;}
+});
+async function checkUpdates(silent=false){
+  const btn=$('checkUpdates');btn.disabled=true;btn.textContent='Checking…';
+  try{
+    const r=await fetch('/api/updates/check',{cache:'no-store'});const d=await r.json();
+    if(!r.ok)throw Error(d.detail||'Could not check for updates');
+    if(d.available){
+      updateReady=true;btn.textContent='Install update';btn.disabled=false;
+      const count=(d.changed_files||[]).length;
+      toast(d.channel==='development' ? `Main has ${count} changed application file${count===1?'':'s'} · ${d.latest}` : `Release ${d.latest} is available`,'info',6500);
+    }else{
+      updateReady=false;btn.textContent='Up to date';
+      if(!silent)toast(d.reason||'Back Quip is up to date','success');
+      setTimeout(()=>{if(!updateReady)updateButtonReset();},3200);
+    }
+  }catch(e){updateButtonReset();if(!silent)toast(e.message,'warning');}
+}
+async function installUpdate(){
+  const btn=$('checkUpdates');btn.disabled=true;btn.textContent='Installing…';
+  toast('Downloading update from the selected GitHub channel. Back Quip will restart.','info',7500);
+  try {
+    const r=await fetch('/api/updates/install',{method:'POST',headers:{'X-BackQuip-Action':'back-quip-local'}});
+    const d=await r.json();if(!r.ok)throw Error(d.detail||'Update failed');
+    toast('Update installing; Back Quip is restarting.','success',0);
+    setTimeout(()=>location.reload(),6500);
+  }catch(e){updateButtonReset();toast(e.message,'error');}
+}
+
+let shutdownArmed = false;
+let shutdownTimer;
+$('restartApp').addEventListener('click', async()=>{
+  const btn=$('restartApp');btn.disabled=true;
+  try {
+    const res=await fetch('/api/system/restart',{method:'POST',headers:{'X-BackQuip-Action':'back-quip-local'}});
+    if(!res.ok)throw Error('Restart request was rejected');
+    toast('Restarting Back Quip…','info',5000);
+    setTimeout(()=>location.reload(),4500);
+  } catch(e) {toast(e.message||'Could not restart','error');btn.disabled=false;}
+});
+$('shutdownApp').addEventListener('click', async()=>{
+  const btn=$('shutdownApp');
+  if(!shutdownArmed){
+    shutdownArmed=true;btn.textContent='Confirm shutdown';
+    toast('Click Confirm shutdown to stop Back Quip.','warning',4500);
+    clearTimeout(shutdownTimer);
+    shutdownTimer=setTimeout(()=>{shutdownArmed=false;btn.textContent='Shutdown';},5000);
+    return;
+  }
+  clearTimeout(shutdownTimer);shutdownArmed=false;btn.disabled=true;
+  try {
+    const res=await fetch('/api/system/shutdown',{method:'POST',headers:{'X-BackQuip-Action':'back-quip-local'}});
+    if(!res.ok)throw Error('Shutdown request was rejected');
+    btn.textContent='Stopped';$('generate').disabled=true;
+    toast('Back Quip is shutting down. Close this tab when ready.','success',0);
+  } catch(e){toast(e.message||'Could not shut down','error');btn.disabled=false;btn.textContent='Shutdown';}
+});
+
+$('checkUpdates').onclick=()=>updateReady?installUpdate():checkUpdates(false);
+renderHistory(); loadPersonas(); status(); loadUpdateChannel().then(()=>checkUpdates(true));
 window.addEventListener('focus',()=>{if(document.visibilityState==='visible')status();});
 </script>
 </body></html>

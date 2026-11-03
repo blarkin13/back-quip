@@ -11,12 +11,12 @@ import urllib.request
 import webbrowser
 
 import uvicorn
-from updater import check_release, stage_release, apply_release, UpdateError
+from updater import check_update, get_channel, stage_update, apply_release, UpdateError
 
 HOST = "127.0.0.1"
 FIRST_PORT = 8001
 LAST_PORT = 8100
-CURRENT_VERSION = "1.6.0"
+CURRENT_VERSION = "1.7.0"
 
 
 def is_back_quip(port: int) -> bool:
@@ -86,35 +86,42 @@ def open_when_ready(port: int) -> None:
 
 
 def check_updates_before_launch() -> bool:
-    """Return True when a release is staged and relaunch is delegated to the updater."""
-    if __import__('os').getenv('BACKQUIP_SKIP_STARTUP_UPDATE')=='1':
+    """Prompt before changing files; no update required to launch offline."""
+    if __import__('os').getenv('BACKQUIP_SKIP_STARTUP_UPDATE') == '1':
         return False
-    print('[Back Quip] Checking GitHub Releases for an update…', flush=True)
+    channel = get_channel()
+    label = 'main branch' if channel == 'development' else 'published releases'
+    print(f'[Back Quip] Checking GitHub {label} ({channel} channel)...', flush=True)
     try:
-        release=check_release(CURRENT_VERSION)
-    except (UpdateError,OSError,ValueError) as exc:
-        print(f'[Back Quip] Update check unavailable: {exc}. Starting installed version.',flush=True)
+        update = check_update(CURRENT_VERSION, channel)
+    except (UpdateError, OSError, ValueError) as exc:
+        print(f'[Back Quip] Update check unavailable: {exc}. Starting installed version.', flush=True)
         return False
-    if not release.get('available'):
-        if release.get('reason'): print(f"[Back Quip] {release['reason']}",flush=True)
+    if not update.get('available'):
+        print(f"[Back Quip] {update.get('reason') or 'No update available.'}", flush=True)
         return False
-    print(f"[Back Quip] Version {release['latest']} is available.",flush=True)
+    changes = update.get('changed_files', [])
+    print(f"[Back Quip] New {channel} update: {update['latest']}", flush=True)
+    if changes:
+        print('[Back Quip] Changed files: ' + ', '.join(changes), flush=True)
     if not sys.stdin.isatty():
-        print('[Back Quip] Non-interactive startup: skip update; use Check updates inside the app.',flush=True)
-        return False
-    answer=input('Download and install this GitHub Release before starting? [y/N]: ').strip().lower()
-    if answer not in ('y','yes'):
-        print('[Back Quip] Continuing with the installed version.',flush=True)
+        print('[Back Quip] Noninteractive launch: update skipped; use Check updates in the app.', flush=True)
         return False
     try:
-        archive=stage_release(release)
-        apply_release(archive,0)
-    except (UpdateError,OSError,ValueError) as exc:
-        print(f'[Back Quip] Update failed: {exc}. Starting installed version.',flush=True)
+        answer = input('Download and install before starting? [y/N]: ').strip().lower()
+    except (EOFError, KeyboardInterrupt):
         return False
-    print('[Back Quip] Update installed. Relaunching the updated application.',flush=True)
+    if answer not in ('y', 'yes'):
+        print('[Back Quip] Starting the installed version.', flush=True)
+        return False
+    try:
+        archive = stage_update(update)
+        apply_release(archive, 0, channel)
+    except (UpdateError, OSError, ValueError) as exc:
+        print(f'[Back Quip] Update failed: {exc}. Starting installed version.', flush=True)
+        return False
+    print('[Back Quip] Update installed; launching the updated application.', flush=True)
     return True
-
 
 def main() -> int:
     prior = existing_instance()
@@ -123,9 +130,9 @@ def main() -> int:
         # newer release before opening the existing page.
         if __import__('os').getenv('BACKQUIP_SKIP_STARTUP_UPDATE')!='1':
             try:
-                release=check_release(CURRENT_VERSION)
+                release=check_update(CURRENT_VERSION)
                 if release.get('available'):
-                    print(f"[Back Quip] Release {release['latest']} available; use Check updates in the running app.",flush=True)
+                    print(f"[Back Quip] Update {release['latest']} available; use Check updates in the running app.",flush=True)
             except (UpdateError,OSError,ValueError):
                 pass
         url = f"http://{HOST}:{prior}"
