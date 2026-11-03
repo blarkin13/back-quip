@@ -1,39 +1,40 @@
-# Back Quip v1.1.2 — compact local response studio
+# Back Quip v1.4.0
 
-## Windows quick start
+Back Quip is a compact, monochrome, local AI social reply studio, powered by llama.cpp (no separate Ollama installation). It offers 18 original fictional personas, adjustable comedy/profanity controls, three model sizes, conversation context, multiple replies, and browser-local history. It does not post comments automatically.
 
-Double-click `start.bat`. On first launch, Back Quip checks whether the local AI engine is responding. If the engine isn't installed, it **asks permission** to install Ollama using the Windows Package Manager (`winget`). It then starts the engine if needed, prepares its Python environment, and opens Back Quip at the first available port starting at 8001. If the same version of Back Quip is already running on a port between 8001 and 8100, it opens that instance instead.
+## Startup
 
-Ollama is an external runtime: **it is not bundled inside the ZIP**. Installing it requires internet access and may display Windows installer prompts. You can decline the prompt. If `winget` is unavailable or installation fails, install from https://ollama.com/download/windows and rerun `start.bat`.
+- **Windows 10/11:** Install 64-bit Python 3.10–3.12; double-click `start.bat`. It uses prebuilt CPU engine wheels, avoiding Visual Studio/nmake errors.
+- **macOS:** Install Python 3.10–3.12; run `bash start.sh` from Terminal. Uses compatible Metal-accelerated engine wheels.
+- **Linux:** Install Python 3.10–3.12 and its `venv` package; run `bash start.sh`. Uses CPU engine wheels where supported.
+- Startup picks the first available local port, starting at http://127.0.0.1:8001. It reuses a running instance of the same version.
 
-Python 3.10 or newer must still be installed for this web-app version. The ZIP does not include Python. If `py` is unavailable, install Python from https://www.python.org/downloads/windows/.
+**Important:** Windows v1.4 initially uses a CPU prebuilt engine. CUDA (NVIDIA RTX 5060 Ti) acceleration is not yet automatically installed. Large models may be slow or exceed your memory. A future installer can support hardware-specific builds.
 
-## Download response engines
+## Models
 
-Select a missing response engine in the dropdown, then click the visible **Download Quick / Sharp / Beefy** button. This also works when no engines are installed and Quick is already selected; no selection-change event is needed. Models aren't pre-bundled. This keeps the ZIP small.
+Use the selector and explicit **Download** button for missing response engines. Models download separately (multiple GB) from Hugging Face into `models/`; the app ZIP contains no model weights. The three options are:
 
-| Display name | Internal model | Approximate download |
-|---|---|---:|
-| Quick | `dolphinlabs/qwen3.5-uncensored:latest` | 2.1 GB |
-| Sharp | `qwen3:8b` | 5.2 GB |
-| Beefy | `qwen3:14b` | 9.3 GB |
+- Quick: Qwen3 4B Instruct abliterated GGUF Q4_K_M
+- Sharp: Qwen3 8B GGUF Q4_K_M
+- Beefy: Qwen3 14B GGUF Q4_K_M
 
-## macOS and Linux quick start
+The names identify approximate sizes, not guaranteed speed or quality. A model downloaded in Ollama is not automatically imported into Back Quip.
 
-Open Terminal in the extracted `back-quip` folder and run `./start.sh` (or `bash start.sh`). The launcher checks for a local AI engine, asks permission to install it using the **official Ollama installer** when missing, then starts the engine, sets up the Python virtual environment, and opens the web page on an available port between 8001 and 8100. Installing the AI engine requires internet access and may prompt for system permissions. Alternatively, install from https://ollama.com/download manually.
+## Personas
 
-Python 3.10+ and venv support are still prerequisites. Some Linux distributions require a separate `python3-venv` package. If your AI engine is configured on a custom host, set `OLLAMA_URL` before launching.
+The 12 Signature personas and six Back Quip Originals are original comic character presets, not celebrity impersonations. Choosing one sets suggested slider defaults. You can modify sliders afterward; the selected personality provides an additional writing mechanism.
 
-The Linux installer may register Ollama as a system service; the launcher checks whether it is already running before attempting to start another copy. Models are still downloaded from inside Back Quip.
+## GitHub release updates
 
+The app checks the latest **published GitHub Release** from `blarkin13/back-quip`. Checking does not modify the app. When a newer release exists and has a ZIP named exactly `Back-Quip-vX.Y.Z.zip`, the **Check updates** control offers installation. Choosing installation downloads the release ZIP, validates its contents, backs up application files, replaces only allowlisted source files, and relaunches Back Quip. It preserves `.venv/`, `models/`, and browser-local history. The update uses HTTPS and requires a deliberate click.
 
-## Existing behavior
+**Publishing updates:** On GitHub, create a Release tagged `v1.4.1` (or newer) and attach a ZIP asset named `Back-Quip-v1.4.1.zip` containing root-level app files. Simply pushing commits to `main` does **not** trigger this updater. Avoid deleting the Git repository to preserve history unless you specifically want a clean history.
 
-- Dark/white monochrome interface and supplied hand logo.
-- Recent generations and advanced intensity/humor/sarcasm/aggression controls are collapsed by default.
-- Mature/dark humor enabled by default. Profanity remains independently adjustable.
-- User-entered text stays local to the engine by default. Browser history uses localStorage.
-- The app binds to localhost by default. Nothing is posted automatically.
-- If port 8001 is in use by a different app, Back Quip automatically tries 8002, 8003, and so on (through 8100). If this version of Back Quip itself is already running on one of those ports, it opens the existing instance instead. Older instances are left running and a different port is selected. The selected address is printed in the terminal.
+If an update fails, inspect `.backquip-update.log` and backups in `.backquip-update-backup/`.
 
-This update provides a guided Windows runtime installation during startup. It is **not yet a self-contained desktop installer**.
+## Privacy and portability
+
+By default the app listens only on `127.0.0.1`; prompts are processed locally. Model downloads and GitHub update checks require network access. Browser history is stored in localStorage; it is not written into the repository.
+
+The first startup requires pip network access and the availability of compatible prebuilt wheels for the selected operating system/Python version. Windows/macOS installation and actual AI output were not tested in this build environment.
