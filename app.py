@@ -16,9 +16,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from llama_cpp import Llama
 from updater import check_release, stage_release, UpdateError
+from source_fetch import fetch_source, SourceError
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '1.4.0'
+VERSION = '1.5.1'
 MODELS_DIR = Path(os.getenv('BACKQUIP_MODELS_DIR', ROOT / 'models'))
 DEFAULT_MODEL = os.getenv('BACKQUIP_MODEL', 'sharp')
 CONTEXT_TOKENS = int(os.getenv('BACKQUIP_CONTEXT', '8192'))
@@ -57,7 +58,8 @@ async def chat(mid, messages, temperature):
 app.mount('/assets', StaticFiles(directory=ROOT / 'static' / 'assets'), name='assets')
 
 class GenerateRequest(BaseModel):
-    comment: str = Field(min_length=1, max_length=12000)
+    comment: str = Field(default="", max_length=12000)
+    source_url: str = Field(default="", max_length=2048)
     points: str = Field(default='', max_length=6000)
     context: str = Field(default='', max_length=12000)
     platform: str = Field(default='Reddit', max_length=60)
@@ -75,7 +77,7 @@ class GenerateRequest(BaseModel):
 
 SYSTEM = """You are Back Quip, a sharp, inventive social-media comeback writer. You are writing a reply AS the user, directed AT the author of the quoted comment. Never write from the comment author's perspective. Never agree with their insult. Never compliment their insult, their confidence, their genius, or their cleverness.
 
-First understand what happened. For a lazy name-calling comment with no actual point, make the lack of an argument the target. For a factual argument, answer the actual claim using the user-provided context; never invent specifics.
+REPLY TARGET: If the source is an article/post with no separate comment, respond directly to that article/post's actual argument or subject. If a separate comment is provided, answer that comment and use the article/post as context only. Do not invent details not present in the source. First understand what happened. For a lazy name-calling comment with no actual point, make the lack of an argument the target. For a factual argument, answer the actual claim using the user-provided context; never invent specifics.
 
 COMEDY: Write three genuinely different approaches. Each should have its own clever premise and payoff, not three variants of 'your argument is bad'. Include specific imagery, an original analogy, or an unexpected reversal. Be funny rather than merely sarcastic. Avoid theatrical 'Ah', 'Wow', 'Oh', 'Kudos', 'I'm flattered', 'that's a bold accusation', 'check the mirror', 'you must be a genius', 'you must be fun at parties', 'intellectual discourse', 'congratulations', 'thanks for proving my point', 'nice try', 'guess what', 'the classic', 'clearly', 'you called me', 'I bet you', or 'sounds like'. Never use the 'I know you are but what am I' mirror retort. Do not paraphrase or quote an insult back as the punchline.
 
@@ -232,6 +234,14 @@ async def updates_install():
     threading.Thread(target=lambda:(time.sleep(.8),os._exit(0)),daemon=True).start()
     return {'status':'restarting','message':'Update downloaded and installation starting'}
 
+@app.post('/api/source/preview')
+async def preview_source(request: dict):
+    url = str(request.get('url') or '')
+    try:
+        return await fetch_source(url)
+    except SourceError as exc:
+        raise HTTPException(422, str(exc))
+
 @app.post('/api/generate')
 async def generate(req: GenerateRequest):
     if req.model not in MODEL_CHOICES.values():
@@ -239,8 +249,23 @@ async def generate(req: GenerateRequest):
     if req.persona and req.persona not in PERSONAS:
         raise HTTPException(400,'Unknown persona')
     p=PERSONAS.get(req.persona)
+    source = None
+    if req.source_url.strip():
+        try:
+            source = await fetch_source(req.source_url)
+        except SourceError as exc:
+            raise HTTPException(422, str(exc))
+    if not req.comment.strip() and not source:
+        raise HTTPException(422, 'Enter an article/post URL or a comment to respond to.')
+    target = req.comment.strip() if req.comment.strip() else source['content']
     user_message=json.dumps({
-        'original_comment':req.comment,'additional_conversation_context':req.context,
+        'original_comment':target,
+        'reply_target': 'specific comment' if req.comment.strip() else 'article or original post',
+        'source_url': source['url'] if source else '',
+        'article_or_post_context': source['content'] if source else '',
+        'source_completeness': source['quality'] if source else 'not provided',
+        'source_accuracy_instruction': ('Only a headline or summary was retrieved. Do not invent article details or pretend to have read the complete article.' if source and source['quality'] != 'full' else ''),
+        'additional_conversation_context':req.context,
         'points_to_make':req.points,'platform':req.platform,'persona':req.persona,
         'persona_description':p['description'] if p else '',
         'comedy_mechanism':p['mechanism'] if p else '',
@@ -288,6 +313,9 @@ async def generate(req: GenerateRequest):
                      not bool(SWEAR.search(' '.join(r['text'] for r in replies))) if req.profanity == 0 else True)
     return {'responses': replies, 'model': req.model,
             'received_settings': {'profanity': req.profanity, 'adult_language': req.adult_language, 'persona':req.persona},
+            'reply_target': 'comment' if req.comment.strip() else 'post',
+            'source_quality': source['quality'] if source else None,
+            'source_warning': source['warning'] if source else None,
             'profanity_met': profanity_met, 'attempts': attempts,
             'style_notice': ('The model did not follow the selected profanity requirement after '+str(attempts)+' attempts. '
                              'Try another model or a different prompt; the slider reached the server correctly.'

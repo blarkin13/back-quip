@@ -16,7 +16,7 @@ from packaging.version import Version, InvalidVersion
 
 ROOT = Path(__file__).resolve().parent
 REPO = 'blarkin13/back-quip'
-ALLOWED = {'app.py','launcher.py','updater.py','requirements.txt','start.bat','start.sh',
+ALLOWED = {'source_fetch.py','app.py','launcher.py','updater.py','requirements.txt','start.bat','start.sh',
            'README.md','.gitignore','static/index.html', 'static/assets/back-quip-logo.png'}
 MAX_ARCHIVE = 15 * 1024 * 1024
 
@@ -66,7 +66,7 @@ def validate_archive(path:Path) -> None:
                 if item.file_size>MAX_ARCHIVE: raise UpdateError('Release contains an oversized file')
                 normalized.append(name)
             if len(set(normalized))!=len(normalized):raise UpdateError('Duplicate file paths in release')
-            if not {'app.py','launcher.py','updater.py','static/index.html'}.issubset(normalized):
+            if not {'app.py','source_fetch.py','launcher.py','updater.py','static/index.html'}.issubset(normalized):
                 raise UpdateError('Release ZIP is missing required application files')
     except zipfile.BadZipFile as exc:raise UpdateError('Downloaded update is not a valid ZIP file') from exc
 

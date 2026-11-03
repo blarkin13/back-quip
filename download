@@ -1,0 +1,9 @@
+.venv/
+models/
+__pycache__/
+*.py[cod]
+*.gguf
+*.part
+.backquip-update*
+.env
+.DS_Store
