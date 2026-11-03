@@ -29,6 +29,7 @@
 @keyframes toast-in{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:640px){.toast-stack{top:auto;bottom:14px;left:14px;right:14px;width:auto}}
 @media(max-width:640px){.advanced-grid{grid-template-columns:1fr}.disclosure{grid-column:auto}}
+.overridden{opacity:.35;pointer-events:none}
 </style>
 </head>
 <body>
@@ -40,6 +41,7 @@
       <div class="group full"><label for="comment">Original comment</label><textarea id="comment" placeholder="Paste the comment you're responding to...">You clearly have no idea what you're talking about.</textarea></div>
       <div class="group full"><label for="points">What points should your response make?</label><textarea id="points" placeholder="Correct their facts, point out the contradiction, make a joke about their argument..."></textarea></div>
       <div class="group full"><details id="contextDetails"><summary style="color:#aaa;cursor:pointer;font-size:13px">+ Add conversation context (optional)</summary><textarea id="context" style="margin-top:10px" placeholder="Paste the original post or earlier replies so Back Quip understands the conversation..."></textarea></details></div>
+      <div class="group full"><label for="persona">Persona</label><select id="persona"><option value="">None · use my settings</option><option>Jeff Ross</option><option>Joan Rivers</option><option>Lisa Lampanelli</option><option>Rodney Dangerfield</option><option>Triumph the Insult Comic Dog</option><option>Greg Giraldo</option></select><div class="hint" id="personaHint">Pick a comedian to write in their style. A persona overrides profanity, humor, tone, and comedy style.</div></div>
       <div class="group"><div class="sliderhead"><label for="profanity">Profanity</label><span class="value" id="profanityValue">0%</span></div><input class="range" id="profanity" type="range" min="0" max="100" value="0" step="5"><div class="ends"><span>Clean</span><span>Unfiltered</span></div></div>
       <div class="group"><label for="adultLanguage">Adult humor</label><label class="toggle"><input type="checkbox" id="adultLanguage" checked><span>Allow mature / dark humor</span></label><div class="hint">Profanity is controlled separately by its slider; no extra switch required.</div></div>
       <details class="disclosure" id="advancedDetails"><summary>Show more · Advanced tone controls</summary><div class="disclosure-body"><div class="advanced-grid">
@@ -65,7 +67,7 @@
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
-const fields = ['comment','points','context','intensity','humor','sarcasm','aggression','profanity','tone','platform','model'];
+const fields = ['comment','points','context','persona','intensity','humor','sarcasm','aggression','profanity','tone','platform','model'];
 const sliderDefaults={intensity:65,humor:75,sarcasm:50,aggression:45,profanity:0};
 let length = 'Short';
 let latest = [];
@@ -74,10 +76,19 @@ try { histories = JSON.parse(localStorage.getItem('backquip-history') || '[]'); 
 function saveHistory() { try { localStorage.setItem('backquip-history', JSON.stringify(histories.slice(0,20))); } catch {} }
 function syncSlider(id) { $(id+'Value').textContent = $(id).value + '%'; }
 for (const id of Object.keys(sliderDefaults)) $(id).addEventListener('input',()=>syncSlider(id));
+// Style controls that a persona replaces.
+const personaOverrides=['profanity','adultLanguage','tone','comedyStyle'];
+function syncPersona(){
+  const on=Boolean($('persona').value);
+  for(const id of personaOverrides){const g=$(id).closest('.group');g.classList.toggle('overridden',on);$(id).disabled=on;}
+  $('advancedDetails').classList.toggle('overridden',on);
+  if(on)$('advancedDetails').open=false;
+}
+$('persona').addEventListener('change',syncPersona);
 function setLength(l) { length = l; document.querySelectorAll('[data-length]').forEach(b=>b.classList.toggle('active',b.dataset.length===l)); }
 document.querySelectorAll('[data-length]').forEach(b=>b.addEventListener('click',()=>setLength(b.dataset.length)));
 function getPayload() { const o={}; for(const id of fields) o[id]=$(id).value; for(const id of Object.keys(sliderDefaults))o[id]=Number(o[id]);o.adult_language=$('adultLanguage').checked;o.comedy_style=$('comedyStyle').value;o.length=length;return o; }
-function applyPayload(p) { for(const id of fields) if (p[id]!==undefined && id!=='model') $(id).value=p[id];if(p.model){ const m=$('model');if([...m.options].some(o=>o.value===p.model))m.value=p.model; }$('adultLanguage').checked=p.adult_language!==false;$('comedyStyle').value=p.comedy_style||'Surprise me';setLength(p.length||'Short');for(const id of Object.keys(sliderDefaults))syncSlider(id); }
+function applyPayload(p) { for(const id of fields) if (p[id]!==undefined && id!=='model') $(id).value=p[id];if(p.model){ const m=$('model');if([...m.options].some(o=>o.value===p.model))m.value=p.model; }$('adultLanguage').checked=p.adult_language!==false;$('comedyStyle').value=p.comedy_style||'Surprise me';setLength(p.length||'Short');for(const id of Object.keys(sliderDefaults))syncSlider(id);$('persona').value=p.persona||'';syncPersona(); }
 function toast(message,kind='info',duration=4500){
   const stack=$('toasts'),el=document.createElement('div');
   el.className='toast';el.dataset.kind=kind;el.setAttribute('role',kind==='error'?'alert':'status');
@@ -176,9 +187,9 @@ $('refreshModels').addEventListener('click',status);
 
 function render(items){latest=items.map(x=>({...x}));const cards=$('cards');cards.replaceChildren();items.forEach((item,i)=>{const card=document.createElement('article');card.className='reply';const label=document.createElement('div');label.className='replytitle';label.textContent=`0${i+1} / ${item.label}`;const text=document.createElement('textarea');text.value=item.text; text.setAttribute('aria-label',`Response ${i+1}`);text.addEventListener('input',()=>latest[i].text=text.value);const actions=document.createElement('div');actions.className='replyactions';const hint=document.createElement('span');hint.className='tiny';hint.textContent='Editable response';const copy=document.createElement('button');copy.className='secondary';copy.textContent='Copy response';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(text.value);toast('Response copied to clipboard','success',2400);}catch(e){error('Could not copy response. Check browser clipboard permissions.');}});actions.append(hint,copy);card.append(label,text,actions);cards.append(card);});$('results').classList.add('visible');}
 function renderHistory() {const root=$('history');root.replaceChildren();$('historyCount').textContent=histories.length?`(${histories.length})`:'';histories.forEach((h,i)=>{const row=document.createElement('div');row.className='historyitem';const button=document.createElement('button');button.textContent=h.payload.comment;button.title='Restore this generation';button.addEventListener('click',()=>{applyPayload(h.payload);render(h.responses);window.scrollTo({top:0,behavior:'smooth'});});const date=document.createElement('span');date.className='muted';date.textContent=new Date(h.date).toLocaleDateString();row.append(button,date);root.append(row);});}
-$('generate').addEventListener('click',async()=>{clearError();const payload=getPayload();if(!payload.comment.trim()) {error('Paste a comment before generating responses.');return;}if(!payload.model||payload.model.startsWith('download:')){error('Download the selected response engine first.');return;}const btn=$('generate');btn.disabled=true;btn.textContent='Writing responses…';try{const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw Error(data.detail||'Generation failed.');render(data.responses);$('receivedSettings').textContent=`Server received: profanity ${data.received_settings?.profanity ?? '?'}% · ${data.attempts ?? 1} attempt(s)`;if(data.style_notice)toast(data.style_notice,'warning',6500);histories.unshift({date:new Date().toISOString(),payload,responses:data.responses});histories=histories.slice(0,20);saveHistory();renderHistory();toast('Three responses generated','success',2200);$('results').scrollIntoView({behavior:'smooth',block:'start'});}catch(ex){error(ex.message||'Could not generate responses.');}finally{btn.disabled=false;btn.textContent='✧  Generate 3 responses';}});
+$('generate').addEventListener('click',async()=>{clearError();const payload=getPayload();if(!payload.comment.trim()) {error('Paste a comment before generating responses.');return;}if(!payload.model||payload.model.startsWith('download:')){error('Download the selected response engine first.');return;}const btn=$('generate');btn.disabled=true;btn.textContent='Writing responses…';try{const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw Error(data.detail||'Generation failed.');render(data.responses);$('receivedSettings').textContent=`Server received: ${data.received_settings?.persona ? 'persona '+data.received_settings.persona : 'profanity '+(data.received_settings?.profanity ?? '?')+'%'} · ${data.attempts ?? 1} attempt(s)`;if(data.style_notice)toast(data.style_notice,'warning',6500);histories.unshift({date:new Date().toISOString(),payload,responses:data.responses});histories=histories.slice(0,20);saveHistory();renderHistory();toast('Three responses generated','success',2200);$('results').scrollIntoView({behavior:'smooth',block:'start'});}catch(ex){error(ex.message||'Could not generate responses.');}finally{btn.disabled=false;btn.textContent='✧  Generate 3 responses';}});
 $('copyAll').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(latest.map(x=>x.label+'\n'+x.text).join('\n\n'));toast('All responses copied','success',2400);}catch(e){error('Could not copy responses. Check browser clipboard permissions.');}});
-$('reset').addEventListener('click',()=>{for(const id of ['points','context'])$(id).value='';for(const [id,value] of Object.entries(sliderDefaults))$(id).value=value;$('adultLanguage').checked=true;$('comedyStyle').value='Surprise me';$('tone').value='Sarcastic';$('platform').value='Reddit';setLength('Short');for(const id of Object.keys(sliderDefaults))syncSlider(id);clearError();toast('Settings reset','success',2200);});
+$('reset').addEventListener('click',()=>{for(const id of ['points','context'])$(id).value='';for(const [id,value] of Object.entries(sliderDefaults))$(id).value=value;$('adultLanguage').checked=true;$('comedyStyle').value='Surprise me';$('tone').value='Sarcastic';$('platform').value='Reddit';$('persona').value='';syncPersona();setLength('Short');for(const id of Object.keys(sliderDefaults))syncSlider(id);clearError();toast('Settings reset','success',2200);});
 let clearHistoryArmed=false,clearHistoryTimer=null;
 $('clearHistory').addEventListener('click',()=>{
   const btn=$('clearHistory');
