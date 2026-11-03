@@ -2,13 +2,6 @@
 setlocal
 cd /d "%~dp0"
 echo Starting Back Quip...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup-runtime.ps1"
-if errorlevel 1 (
-  echo.
-  echo Local AI setup was not completed. See instructions above.
-  pause
-  exit /b 1
-)
 if not exist .venv\Scripts\python.exe (
   where py >nul 2>&1
   if errorlevel 1 (
@@ -23,6 +16,7 @@ if not exist .venv\Scripts\python.exe (
   pause
   exit /b 1
 )
+rem The first run builds the built-in AI engine, which can take a few minutes.
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 if errorlevel 1 (
   echo Dependency installation failed.

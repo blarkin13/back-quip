@@ -33,7 +33,7 @@
 </head>
 <body>
 <div class="shell">
-  <header class="top"><div><div class="brand"><img class="brand-icon" src="/assets/back-quip-logo.png" alt="Back Quip logo" /> Back Quip</div><div class="sub">Your words. Your tone. Your response.</div></div><span class="tag">Local AI Studio · v1.1.2</span></header>
+  <header class="top"><div><div class="brand"><img class="brand-icon" src="/assets/back-quip-logo.png" alt="Back Quip logo" /> Back Quip</div><div class="sub">Your words. Your tone. Your response.</div></div><span class="tag">Local AI Studio · v1.2.0</span></header>
   <main class="main">
     <div class="heading"><h1>▢ &nbsp;Response Studio</h1><span class="status"><span id="dot" class="dot"></span><span id="status">Checking local AI...</span></span></div>
     <div class="grid">
@@ -92,7 +92,7 @@ function toast(message,kind='info',duration=4500){
 }
 function error(msg){toast(msg,'error',6500);}
 function clearError(){}
-const modes={Quick:'dolphinlabs/qwen3.5-uncensored:latest',Sharp:'qwen3:8b',Beefy:'qwen3:14b'};
+const modes={Quick:'quick',Sharp:'sharp',Beefy:'beefy'};
 let modelStatusLoaded=false, lastMode='Sharp', downloadTimer=null, activeDownloads=new Set();
 function updateModelActions(){
   const chosen=$('model').value;
@@ -110,10 +110,10 @@ async function status(){
     const d=await r.json();
     // Old servers return a list of strings instead of {name, installed} objects.
     // Don't turn a schema mismatch into misleading 'Download undefined' choices.
-    if(d.version!=='1.1.2' || !Array.isArray(d.models) ||
+    if(d.version!=='1.2.0' || !Array.isArray(d.models) ||
        !d.models.every(m=>m && typeof m==='object' && typeof m.name==='string' && typeof m.installed==='boolean')) {
       const previous=d.version||'unknown';
-      throw Error(`Back Quip server version mismatch (running ${previous}, page requires 1.1.2). Stop the older server on port 8001, start v1.1.2, then press Ctrl+Shift+R.`);
+      throw Error(`Back Quip server version mismatch (running ${previous}, page requires 1.2.0). Stop the older server on port 8001, start v1.2.0, then press Ctrl+Shift+R.`);
     }
     $('dot').classList.toggle('ok',d.connected);
     $('status').textContent=d.connected?'Engine ready':'Engine offline';
@@ -142,7 +142,7 @@ async function status(){
       if(!downloadTimer)downloadTimer=setTimeout(()=>{downloadTimer=null;status()},1200);
     } else {
       const failed=Object.entries(d.install||{}).find(([k,v])=>v.state==='error');
-      $('modelHint').textContent= !d.connected?'Start your local AI engine, then refresh.'
+      $('modelHint').textContent= !d.connected?'The built-in AI engine did not load. Restart Back Quip.'
         : failed?`${failed[0]} download failed: ${failed[1].message}`
         :d.models.filter(m=>m.installed).length+' of 3 modes ready · Select a missing mode and click Download.';
     }
