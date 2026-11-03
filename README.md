@@ -1,4 +1,4 @@
-# Back Quip v1.7.0
+# Back Quip v1.7.1
 
 Back Quip is a compact, monochrome, local AI social reply studio, powered by llama.cpp (no separate Ollama installation). It offers 18 original fictional personas, adjustable comedy/profanity controls, three model sizes, conversation context, URL article/post reading, optional comment targets, multiple replies, and browser-local history. It does not post comments automatically.
 
@@ -58,3 +58,11 @@ Reads publisher-supplied JSON-LD `articleBody` and article-tag paragraphs as wel
 ## Lifecycle controls
 
 Restart and Shutdown are available from the header. The updater never overwrites a live server; it installs only after the old process exits and then launches the application again.
+
+## v1.7.1 model list fix
+
+The interface now validates `/api/status` by the response schema instead of
+rejecting every backend whose version differs from a hard-coded old version.
+This corrects the v1.7.0 selector showing `Unavailable` despite installed models.
+Model files in `models/` are untouched. Upload the v1.7.1 code to GitHub
+`main` before starting with Development updates to avoid reverting the fix.

@@ -19,7 +19,7 @@ from updater import check_update, stage_update, get_channel, set_channel, Update
 from source_fetch import fetch_source, SourceError
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '1.7.0'
+VERSION = '1.7.1'
 MODELS_DIR = Path(os.getenv('BACKQUIP_MODELS_DIR', ROOT / 'models'))
 DEFAULT_MODEL = os.getenv('BACKQUIP_MODEL', 'sharp')
 CONTEXT_TOKENS = int(os.getenv('BACKQUIP_CONTEXT', '8192'))
