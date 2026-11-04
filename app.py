@@ -1,7 +1,9 @@
 """Back Quip — self-hosted response studio, built on llama.cpp."""
 import asyncio
+import ctypes
 import json
 import os
+import platform
 import re
 import threading
 import sys
@@ -19,34 +21,184 @@ from updater import check_update, stage_update, get_channel, set_channel, Update
 from source_fetch import fetch_source, SourceError
 
 ROOT = Path(__file__).resolve().parent
-VERSION = '1.7.1'
-MODELS_DIR = Path(os.getenv('BACKQUIP_MODELS_DIR', ROOT / 'models'))
-DEFAULT_MODEL = os.getenv('BACKQUIP_MODEL', 'sharp')
+VERSION = '1.8.0'
 CONTEXT_TOKENS = int(os.getenv('BACKQUIP_CONTEXT', '8192'))
 app = FastAPI(title='Back Quip', version=VERSION)
-MODEL_CHOICES = {'Quick':'quick', 'Sharp':'sharp', 'Beefy':'beefy'}
-MODEL_FILES = {
-    'quick': {'repo':'mradermacher/Huihui-Qwen3-4B-Instruct-2507-abliterated-GGUF', 'file':'Huihui-Qwen3-4B-Instruct-2507-abliterated.Q4_K_M.gguf','thinks':False},
-    'sharp': {'repo':'Qwen/Qwen3-8B-GGUF','file':'Qwen3-8B-Q4_K_M.gguf','thinks':True},
-    'beefy': {'repo':'Qwen/Qwen3-14B-GGUF','file':'Qwen3-14B-Q4_K_M.gguf','thinks':True},
+
+# ---- Model catalog ---------------------------------------------------------
+# Response models Back Quip can use. Every model runs on the built-in llama.cpp
+# engine as a GGUF file from Hugging Face. Each family comes in several
+# quantizations: smaller files are faster and lighter, larger ones write better.
+# Sizes are the download; memory is approximate RAM (unified memory on a Mac)
+# while generating with the default 8K context. This lives in app.py because
+# older updaters only copy a fixed list of files.
+FAMILIES = {
+    'quick': {
+        'label': 'Quick · Qwen3 4B Uncensored', 'repo': 'mradermacher/Huihui-Qwen3-4B-Instruct-2507-abliterated-GGUF',
+        'thinks': False, 'note': 'Fastest. Uncensored, so it follows profanity and persona settings most willingly.',
+        'models': {
+            'quick-q4': {'label': '4B · Q4_K_M', 'file': 'Huihui-Qwen3-4B-Instruct-2507-abliterated.Q4_K_M.gguf', 'size_gb': 2.5, 'memory_gb': 3.5, 'note': 'Recommended for 8 GB computers'},
+            'quick-q6': {'label': '4B · Q6_K', 'file': 'Huihui-Qwen3-4B-Instruct-2507-abliterated.Q6_K.gguf', 'size_gb': 3.3, 'memory_gb': 4.3},
+            'quick-q8': {'label': '4B · Q8_0', 'file': 'Huihui-Qwen3-4B-Instruct-2507-abliterated.Q8_0.gguf', 'size_gb': 4.3, 'memory_gb': 5.3, 'note': 'Best quality at this size'},
+        },
+    },
+    'sharp': {
+        'label': 'Sharp · Qwen3 8B', 'repo': 'Qwen/Qwen3-8B-GGUF', 'thinks': True,
+        'note': 'Official Qwen release. Wittier than Quick, but may soften strong language.',
+        'models': {
+            'sharp-q4': {'label': '8B · Q4_K_M', 'file': 'Qwen3-8B-Q4_K_M.gguf', 'size_gb': 5.0, 'memory_gb': 6.2},
+            'sharp-q6': {'label': '8B · Q6_K', 'file': 'Qwen3-8B-Q6_K.gguf', 'size_gb': 6.7, 'memory_gb': 7.9},
+            'sharp-q8': {'label': '8B · Q8_0', 'file': 'Qwen3-8B-Q8_0.gguf', 'size_gb': 8.7, 'memory_gb': 9.9, 'note': 'Needs 16 GB+ to be comfortable'},
+        },
+    },
+    'sharp-uncensored': {
+        'label': 'Sharp Uncensored · Qwen3 8B', 'repo': 'mradermacher/Huihui-Qwen3-8B-abliterated-v2-GGUF', 'thinks': True,
+        'note': 'The 8B model with refusals removed. Good middle ground for roasts and personas.',
+        'models': {
+            'sharp-uncensored-q4': {'label': '8B · Q4_K_M', 'file': 'Huihui-Qwen3-8B-abliterated-v2.Q4_K_M.gguf', 'size_gb': 5.0, 'memory_gb': 6.2},
+            'sharp-uncensored-q6': {'label': '8B · Q6_K', 'file': 'Huihui-Qwen3-8B-abliterated-v2.Q6_K.gguf', 'size_gb': 6.7, 'memory_gb': 7.9},
+        },
+    },
+    'beefy': {
+        'label': 'Beefy · Qwen3 14B', 'repo': 'Qwen/Qwen3-14B-GGUF', 'thinks': True,
+        'note': 'Best writing, slowest. Needs a computer with plenty of memory.',
+        'models': {
+            'beefy-q4': {'label': '14B · Q4_K_M', 'file': 'Qwen3-14B-Q4_K_M.gguf', 'size_gb': 9.0, 'memory_gb': 10.5, 'note': 'Needs 16 GB+'},
+            'beefy-q6': {'label': '14B · Q6_K', 'file': 'Qwen3-14B-Q6_K.gguf', 'size_gb': 12.1, 'memory_gb': 13.6, 'note': 'Needs 24 GB+'},
+        },
+    },
 }
+# Engine IDs sent by v1.2 pages and saved history.
+LEGACY_IDS = {'quick': 'quick-q4', 'sharp': 'sharp-q4', 'beefy': 'beefy-q4'}
+
+
+def find(model_id):
+    """(family_id, family, model) for a model ID, or None."""
+    model_id = LEGACY_IDS.get(model_id, model_id)
+    for family_id, family in FAMILIES.items():
+        if model_id in family['models']:
+            return family_id, family, family['models'][model_id]
+    return None
+
+
+def resolve(model_id):
+    return LEGACY_IDS.get(model_id, model_id)
+
+
+def models_dir():
+    return Path(os.getenv('BACKQUIP_MODELS_DIR', ROOT / 'models'))
+
+
+def model_path(model_id):
+    return models_dir() / find(model_id)[2]['file']
+
+
+def download_url(model_id):
+    _, family, model = find(model_id)
+    return f"https://huggingface.co/{family['repo']}/resolve/main/{model['file']}"
+
+
+def downloaded(model_id):
+    return model_path(model_id).exists()
+
+
+def label(model_id):
+    _, family, model = find(model_id)
+    return f"{family['label'].split(' · ')[0]} · {model['label']}"
+
+
+def total_memory_gb():
+    try:
+        if sys.platform == 'win32':
+            class Status(ctypes.Structure):
+                _fields_ = [('dwLength', ctypes.c_ulong), ('dwMemoryLoad', ctypes.c_ulong),
+                            ('ullTotalPhys', ctypes.c_ulonglong), ('ullAvailPhys', ctypes.c_ulonglong),
+                            ('ullTotalPageFile', ctypes.c_ulonglong), ('ullAvailPageFile', ctypes.c_ulonglong),
+                            ('ullTotalVirtual', ctypes.c_ulonglong), ('ullAvailVirtual', ctypes.c_ulonglong),
+                            ('ullAvailExtendedVirtual', ctypes.c_ulonglong)]
+            status = Status()
+            status.dwLength = ctypes.sizeof(Status)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status))
+            return status.ullTotalPhys / 2**30
+        return os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES') / 2**30
+    except (AttributeError, OSError, ValueError):
+        return None
+
+
+def tight(model, memory=None):
+    """True when a model probably won't fit alongside the OS and a browser."""
+    memory = memory if memory is not None else total_memory_gb()
+    return bool(memory and model['memory_gb'] > memory * 0.6)
+
+
+def platform_name():
+    return {'darwin': 'macOS', 'win32': 'Windows', 'linux': 'Linux'}.get(sys.platform, sys.platform)
+
+
+def accelerator():
+    if sys.platform == 'darwin' and platform.machine() == 'arm64':
+        return 'Apple GPU (Metal)'
+    return 'CPU'
+
+
+def default():
+    """A downloaded model that fits, else the smallest model to download first."""
+    memory = total_memory_gb()
+    ids = [mid for family in FAMILIES.values() for mid in family['models']]
+    for mid in ids:
+        if downloaded(mid) and not tight(find(mid)[2], memory):
+            return mid
+    return next((mid for mid in ids if downloaded(mid)), 'quick-q4')
+
+
+class Settings:
+    """The chosen model, stored in data/settings.json."""
+
+    def __init__(self, path: Path):
+        self.path = path
+
+    def _read(self):
+        try:
+            return json.loads(self.path.read_text())
+        except (OSError, ValueError):
+            return {}
+
+    def load(self):
+        model_id = resolve(self._read().get('model') or '')
+        if find(model_id) and downloaded(model_id):
+            return model_id
+        return default()  # never chosen, or the chosen file was deleted
+
+    def save(self, model_id):
+        model_id = resolve(model_id)
+        if not find(model_id):
+            raise ValueError(f'Unknown model {model_id}')
+        if not downloaded(model_id):
+            raise ValueError(f'{label(model_id)} has not been downloaded yet')
+        saved = self._read()
+        saved['model'] = model_id
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        temp = self.path.with_suffix('.tmp')
+        temp.write_text(json.dumps(saved, indent=2))
+        os.replace(temp, self.path)
+        return model_id
+
+
+settings = Settings(ROOT / '.backquip-models.json')
 DOWNLOADS = {}
 _active_download = asyncio.Lock()
 _engine={'id':None,'llm':None}
 _engine_lock=threading.Lock()
 
-def model_path(mid):
-    return MODELS_DIR / MODEL_FILES[mid]['file']
-
 def local_chat(mid, messages, temperature):
     with _engine_lock:
         if _engine['id'] != mid:
-            _engine['llm']=None
-            if not model_path(mid).exists():
-                raise ValueError('This response engine is not installed. Click Download.')
+            _engine['llm']=None  # free the old model before loading the next
+            if not downloaded(mid):
+                raise ValueError(f'{label(mid)} has not been downloaded. Open the Models tab and click Download.')
             _engine['llm'] = Llama(model_path=str(model_path(mid)),n_ctx=CONTEXT_TOKENS,n_gpu_layers=-1,verbose=False)
             _engine['id']=mid
-        if MODEL_FILES[mid]['thinks']:
+        if find(mid)[1]['thinks']:
             messages=[*messages[:-1],{**messages[-1],'content':messages[-1]['content']+' /no_think'}]
         res=_engine['llm'].create_chat_completion(messages=messages,temperature=temperature,top_p=.95,repeat_penalty=1.10,max_tokens=1500,response_format={'type':'json_object'})
         raw=res['choices'][0]['message']['content'] or ''
@@ -72,7 +224,7 @@ class GenerateRequest(BaseModel):
     adult_language: bool = True
     comedy_style: str = Field(default='Surprise me', max_length=60)
     length: str = Field(default='Short', pattern='^(One-liner|Short|Detailed)$')
-    model: str = Field(default=DEFAULT_MODEL, min_length=1, max_length=150)
+    model: str = Field(default='', max_length=150)  # blank uses the model chosen on the Models tab
     persona: str = Field(default="", max_length=80)
 
 SYSTEM = """You are Back Quip, a sharp, inventive social-media comeback writer. You are writing a reply AS the user, directed AT the author of the quoted comment. Never write from the comment author's perspective. Never agree with their insult. Never compliment their insult, their confidence, their genius, or their cleverness.
@@ -161,31 +313,49 @@ def needs_rewrite(replies, req: GenerateRequest) -> bool:
 def index():
     return FileResponse(ROOT / 'static' / 'index.html')
 
-def installed_models():
-    return {mid for mid in MODEL_FILES if model_path(mid).exists()}
-
 @app.get('/api/personas')
 def get_personas():
     return {'personas':[{k:v for k,v in p.items() if k != 'mechanism'} for p in PERSONA_CATALOG]}
 
 @app.get('/api/status')
 async def status():
-    installed=installed_models()
-    return {'connected':True,'models':[{'name':name,'installed':mid in installed} for name,mid in MODEL_CHOICES.items()],
-            'install':DOWNLOADS.copy(),'version':VERSION,'application':'back-quip'}
+    selected=settings.load()
+    return {'connected':True,'application':'back-quip','version':VERSION,
+            'selected':selected,'selected_label':label(selected),'ready':downloaded(selected),
+            'downloading':next((label(m) for m,d in DOWNLOADS.items() if d['state'] in ('queued','downloading')),None)}
 
-async def pull_model(name):
-    mid=MODEL_CHOICES[name]
-    info=MODEL_FILES[mid]
-    url=f"https://huggingface.co/{info['repo']}/resolve/main/{info['file']}"
+@app.get('/api/models')
+def list_models():
+    """Every model, whether it is downloaded and fits this computer, and which one is in use."""
+    memory=total_memory_gb()
+    return {'platform':platform_name(),'memory_gb':round(memory,1) if memory else None,
+            'engine':{'label':'llama.cpp (built in)','accelerator':accelerator()},
+            'selected':settings.load(),'downloads':DOWNLOADS.copy(),
+            'families':[{'id':fid,'label':f['label'],'note':f['note'],'repo':f['repo'],
+                         'models':[{'id':mid,**m,
+                                    'downloaded':downloaded(mid),'tight':tight(m,memory)}
+                                   for mid,m in f['models'].items()]}
+                        for fid,f in FAMILIES.items()]}
+
+class ModelChoice(BaseModel):
+    model: str
+
+@app.put('/api/models/selection')
+def choose_model(request: ModelChoice):
+    try:
+        return {'selected':settings.save(request.model)}
+    except ValueError as exc:
+        raise HTTPException(422,str(exc))
+
+async def pull_model(mid):
     target=model_path(mid)
     partial=target.with_suffix('.part')
     try:
         async with _active_download:
-            DOWNLOADS[name]={'state':'downloading','progress':0,'message':'Connecting…'}
-            MODELS_DIR.mkdir(parents=True,exist_ok=True)
+            DOWNLOADS[mid]={'state':'downloading','progress':0,'message':'Connecting…'}
+            models_dir().mkdir(parents=True,exist_ok=True)
             async with httpx.AsyncClient(timeout=httpx.Timeout(connect=20,read=300,write=60,pool=30),follow_redirects=True) as client:
-                async with client.stream('GET',url) as response:
+                async with client.stream('GET',download_url(mid)) as response:
                     response.raise_for_status()
                     total=int(response.headers.get('content-length') or 0)
                     done=0
@@ -193,23 +363,35 @@ async def pull_model(name):
                         async for chunk in response.aiter_bytes(1<<20):
                             fh.write(chunk);done+=len(chunk)
                             percent=round(100*done/total) if total else 0
-                            DOWNLOADS[name]={'state':'downloading','progress':min(99,percent),'message':f'{done/1e9:.1f} / {total/1e9:.1f} GB' if total else f'{done/1e9:.1f} GB'}
+                            DOWNLOADS[mid]={'state':'downloading','progress':min(99,percent),'message':f'{done/1e9:.1f} / {total/1e9:.1f} GB' if total else f'{done/1e9:.1f} GB'}
             if target.exists():target.unlink()
             partial.replace(target)
-            DOWNLOADS[name]={'state':'complete','progress':100,'message':'Ready'}
+            DOWNLOADS[mid]={'state':'complete','progress':100,'message':'Ready'}
     except Exception as exc:
         partial.unlink(missing_ok=True)
-        DOWNLOADS[name]={'state':'error','progress':0,'message':str(exc)[:240]}
+        DOWNLOADS[mid]={'state':'error','progress':0,'message':str(exc)[:240]}
 
-@app.post('/api/models/{name}/download')
-async def download_model(name:str):
-    if name not in MODEL_CHOICES:raise HTTPException(404,'Unknown mode')
-    if MODEL_CHOICES[name] in installed_models():return {'state':'complete','message':'Already installed'}
+@app.post('/api/models/{mid}/download')
+async def download_model(mid:str):
+    mid=resolve(mid)
+    if not find(mid):raise HTTPException(404,'Unknown model')
+    if downloaded(mid):return {'state':'complete','message':'Already downloaded'}
     if any(x.get('state') in ('queued','downloading') for x in DOWNLOADS.values()):
         raise HTTPException(409,'Another download is already in progress')
-    DOWNLOADS[name]={'state':'queued','progress':0,'message':'Queued'}
-    asyncio.create_task(pull_model(name))
-    return {'state':'queued','message':f'{name} download started'}
+    DOWNLOADS[mid]={'state':'queued','progress':0,'message':'Queued'}
+    asyncio.create_task(pull_model(mid))
+    return {'state':'queued','message':f'{label(mid)} download started'}
+
+@app.delete('/api/models/{mid}')
+def delete_model(mid:str, x_backquip_action: str | None = Header(default=None)):
+    _local_action_guard(x_backquip_action)
+    mid=resolve(mid)
+    if not find(mid):raise HTTPException(404,'Unknown model')
+    with _engine_lock:
+        if _engine['id']==mid:_engine.update(id=None,llm=None)
+        model_path(mid).unlink(missing_ok=True)
+    DOWNLOADS.pop(mid,None)
+    return {'selected':settings.load()}
 
 class UpdateChannelRequest(BaseModel):
     channel: str
@@ -287,8 +469,9 @@ async def preview_source(request: dict):
 
 @app.post('/api/generate')
 async def generate(req: GenerateRequest):
-    if req.model not in MODEL_CHOICES.values():
-        raise HTTPException(400, 'Choose one of the available Back Quip modes.')
+    req.model=resolve(req.model) if req.model else settings.load()
+    if not find(req.model):
+        raise HTTPException(400, 'Unknown model. Choose one on the Models tab.')
     if req.persona and req.persona not in PERSONAS:
         raise HTTPException(400,'Unknown persona')
     p=PERSONAS.get(req.persona)

@@ -1,6 +1,6 @@
-# Back Quip v1.7.1
+# Back Quip v1.8.0
 
-Back Quip is a compact, monochrome, local AI social reply studio, powered by llama.cpp (no separate Ollama installation). It offers 18 original fictional personas, adjustable comedy/profanity controls, three model sizes, conversation context, URL article/post reading, optional comment targets, multiple replies, and browser-local history. It does not post comments automatically.
+Back Quip is a compact, monochrome, local AI social reply studio, powered by llama.cpp (no separate Ollama installation). It offers 18 original fictional personas, adjustable comedy/profanity controls, a choice of response models, conversation context, URL article/post reading, optional comment targets, multiple replies, and browser-local history. It does not post comments automatically.
 
 ## Startup
 
@@ -13,13 +13,18 @@ Back Quip is a compact, monochrome, local AI social reply studio, powered by lla
 
 ## Models
 
-Use the selector and explicit **Download** button for missing response engines. Models download separately (multiple GB) from Hugging Face into `models/`; the app ZIP contains no model weights. The three options are:
+Models live on their own **Models** tab. The Studio tab shows the model in use, with a **Change** button that opens the Models tab.
 
-- Quick: Qwen3 4B Instruct abliterated GGUF Q4_K_M
-- Sharp: Qwen3 8B GGUF Q4_K_M
-- Beefy: Qwen3 14B GGUF Q4_K_M
+The Models tab lists every model with its download size, approximate memory use and Hugging Face file. It warns when a model may be too large for this computer (more than 60% of its RAM). Click **Download** to fetch a model (it asks first), pick one with its radio button to use it, or **Remove** it to free disk space. Your choice is saved in `.backquip-models.json` on this computer. If the chosen file is missing, Back Quip falls back to a downloaded model that fits.
 
-The names identify approximate sizes, not guaranteed speed or quality. A model downloaded in Ollama is not automatically imported into Back Quip.
+| Family | Versions | Download |
+|---|---|---:|
+| Quick · Qwen3 4B Uncensored (Huihui abliterated) | Q4_K_M, Q6_K, Q8_0 | 2.5–4.3 GB |
+| Sharp · Qwen3 8B (official) | Q4_K_M, Q6_K, Q8_0 | 5.0–8.7 GB |
+| Sharp Uncensored · Qwen3 8B (Huihui abliterated) | Q4_K_M, Q6_K | 5.0–6.7 GB |
+| Beefy · Qwen3 14B (official) | Q4_K_M, Q6_K | 9.0–12.1 GB |
+
+Smaller versions (Q4) are faster and lighter; larger ones (Q6, Q8) write better. Files download from Hugging Face into `models/`; the app ZIP contains no model weights. Files from v1.7 and earlier (Quick, Sharp and Beefy at Q4_K_M) are recognized without downloading again. A model downloaded in Ollama is not automatically imported into Back Quip.
 
 ## Personas
 
@@ -59,10 +64,6 @@ Reads publisher-supplied JSON-LD `articleBody` and article-tag paragraphs as wel
 
 Restart and Shutdown are available from the header. The updater never overwrites a live server; it installs only after the old process exits and then launches the application again.
 
-## v1.7.1 model list fix
+## v1.8.0 model catalog
 
-The interface now validates `/api/status` by the response schema instead of
-rejecting every backend whose version differs from a hard-coded old version.
-This corrects the v1.7.0 selector showing `Unavailable` despite installed models.
-Model files in `models/` are untouched. Upload the v1.7.1 code to GitHub
-`main` before starting with Development updates to avoid reverting the fix.
+Models moved to a separate Models tab with more sizes and families (see Models above). The model catalog is part of `app.py`, so updating from v1.7 with the built-in updater works without new files.
